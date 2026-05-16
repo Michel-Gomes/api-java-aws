@@ -6,31 +6,7 @@ on:
         - main
    pull_request:
      branches:
-        - main
-
-jobs:
-
-    build:
-       name: Compilação
-       runs-on: ubuntu-22.04
-       steps:
-          - name: Checkout do código
-            uses: actions/checkout@v2
-
-          - name: Configuração do JDK 21
-            uses: actions/setup-java@v2
-            with:
-                java-version: "21"
-                distribution: "temurin"
-
-          - name: Pegar os arquivos da pasta target
-            run: ls -la target
-
-          - name: Gerando o arquivo JAR compilado do projeto
-            uses: actions/upload-artifact@v4
-            with:
-                name: jar-file
-                path: target/*.jar    
+        - main   
     
     deploy:
         name: Publicação
