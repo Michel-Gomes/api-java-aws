@@ -1,48 +1,44 @@
 name: Pipeline para Deploy da aplicação no AWS
 
 on:
-   push:
-     branches:
-        - main
-   pull_request:
-     branches:
-        - main   
-    
-    deploy:
-        name: Publicação
-        runs-on: ubuntu-22.04
-        needs: test
-        steps:
-          
-           - name: Checkout code
-             uses: actions/checkout@v2
+  push:
+    branches:
+      - main
 
-           - name: Download JAR artifact
-             uses: actions/download-artifact@v4
-             with:
-                name: jar-file
+  pull_request:
+    branches:
+      - main
 
-           - name: Listar artefatos baixados
-             run: ls -la
+jobs:
+  deploy:
+    name: Publicação
+    runs-on: ubuntu-22.04
 
-           - name: Renomear arquivo JAR
-             run: |
-               JAR_FILE=$(ls *.jar)
-               echo "Arquivo JAR baixado: $JAR_FILE"
-               mv $JAR_FILE api-java-aws.jar
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-           - name: Fazer deploy no Elastic Beanstalk
-             uses: einaregilsson/beanstalk-deploy@v20
-             with:
-                 aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-                 aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                 application_name: api-java-aws
-                 environment_name: Api-javai-aws-env
-                 region: us-east-2
-                 deployment_package: api-java-aws.jar
-                 version_label: ${{ github.sha }}
+      - name: Build da aplicação
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
 
+      - name: Renomear arquivo JAR
+        run: |
+          JAR_FILE=$(ls target/*.jar | head -n 1)
+          echo "Arquivo encontrado: $JAR_FILE"
+          cp $JAR_FILE api-java-aws.jar
 
-          # Limpar artefatos após o deploy
-           - name: Limpar arquivos temporários
-             run: rm -f *.jar
+      - name: Fazer deploy no Elastic Beanstalk
+        uses: einaregilsson/beanstalk-deploy@v20
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: api-java-aws
+          environment_name: Api-javai-aws-env
+          region: us-east-2
+          deployment_package: api-java-aws.jar
+          version_label: ${{ github.sha }}
+
+      - name: Limpar arquivos temporários
+        run: rm -f api-java-aws.jar
